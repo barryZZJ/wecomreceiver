@@ -10,7 +10,7 @@
 `pip instasll loguru`
 
 ```python
-from WecomReceiver.WecomReceiver import WecomReceiver
+from WecomReceiver import WecomReceiver, BaseMessage, TextMessage, VideoMessage, LocationMessage, LinkMessage
 from loguru import logger  # 可选
 
 cid = ''  # 企业id
@@ -31,32 +31,16 @@ bp = WecomReceiver(
 
 # 注册消息监听器
 @bp.receive
-def on_msg(
-    content: str,
-    toUserName: str,
-    fromUserName: str,
-    createTime: str,
-    msgType: str,
-    msgId: str,
-    agentID: str,
-    ):
+def on_msg(msg: BaseMessage):
     """
-    收到消息时所有信息如上，可以只定义需要的形参。
+    收到的消息类型、属性见message.py的注释
     
     参考：
-    https://developer.work.weixin.qq.com/document/10514
-    https://developer.work.weixin.qq.com/document/path/90240
-    
-    :param content: 用户发送的消息,
-    :param toUserName: 企业微信CorpID,
-    :param fromUserName: 发送方成员UserID,
-    :param createTime: 消息创建时间（整型）,
-    :param msgType: 固定为'text',
-    :param msgId: 消息对应的唯一id，可用于排重,
-    :param agentID: 企业应用的id，整型,
+    https://developer.work.weixin.qq.com/document/path/90239
     """
     # handle messages here
-    pass
+    if isinstance(msg, TextMessage):
+        print(msg.content)
 
 
 # 主app部分:

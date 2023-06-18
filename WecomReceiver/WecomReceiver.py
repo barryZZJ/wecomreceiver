@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 import os
 import traceback
 import xml.etree.cElementTree as ET
@@ -9,6 +8,8 @@ from flask import Blueprint, request, abort
 from urllib.parse import unquote
 
 from .WXBizMsgCrypt.WXBizMsgCrypt3 import WXBizMsgCrypt
+from .message import TextMessage, BaseMessage, ImageMessage
+from .const import MessageModel, MsgTypes
 
 
 class WecomReceiver(Blueprint):
@@ -73,35 +74,23 @@ class WecomReceiver(Blueprint):
 
         xml_tree = ET.fromstring(xmlData)
         try:
-            content = xml_tree.find('Content').text
-            toUserName = xml_tree.find('ToUserName').text
-            fromUserName = xml_tree.find('FromUserName').text
-            createTime = xml_tree.find('CreateTime').text
             msgType = xml_tree.find('MsgType').text
-            msgId = xml_tree.find('MsgId').text
-            agentID = xml_tree.find('AgentID').text
+            assert msgType in MsgTypes
         except AttributeError:
             self.logger.error(traceback.format_exc())
             abort(500)
             return '', 500
 
+        xml_dict = {child.tag: child.text for child in xml_tree}
+        message = MessageModel[msgType].parse_obj(xml_dict)
+
         for callback in self.callbacks:
-            callback(
-                content=content,
-                toUserName=toUserName,
-                fromUserName=fromUserName,
-                createTime=createTime,
-                msgType=msgType,
-                msgId=msgId,
-                agentID=agentID,
-            )
+            callback(message=message)
 
         return '', 200
 
     def receive(self, func):
-        def callback(**kwargs):
-            func_args = inspect.signature(func).parameters
-            valid_args = {arg: value for arg, value in kwargs.items() if arg in func_args}
-            return func(**valid_args)
+        def callback(message: BaseMessage):
+            return func(message)
         self.callbacks.append(callback)
         return callback
