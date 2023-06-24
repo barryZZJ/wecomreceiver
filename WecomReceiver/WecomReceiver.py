@@ -90,7 +90,5 @@ class WecomReceiver(Blueprint):
         return '', 200
 
     def receive(self, func):
-        def callback(message: BaseMessage):
-            return func(message)
-        self.callbacks.append(callback)
-        return callback
+        self.callbacks.append(func)
+        return func
