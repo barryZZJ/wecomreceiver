@@ -69,7 +69,6 @@ class WecomReceiver(Blueprint):
         nonce = request.args.get('nonce', '')
         reqData = request.get_data(cache=False, as_text=True)
         ret, xmlData = self.wxcpt.DecryptMsg(reqData, msg_signature, timestamp, nonce)
-        self.logger.info('Receive message:\n' + str(xmlData))
         self._raise_for_ret_error(ret, 'DecryptMsg ret: ' + str(ret))
 
         xml_tree = ET.fromstring(xmlData)
@@ -83,6 +82,7 @@ class WecomReceiver(Blueprint):
 
         xml_dict = {child.tag: child.text for child in xml_tree}
         message = MessageModel[msgType].parse_obj(xml_dict)
+        self.logger.info('Receive message:\n{}', message)
 
         for callback in self.callbacks:
             callback(message=message)
